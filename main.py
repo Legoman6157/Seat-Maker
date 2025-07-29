@@ -4,6 +4,8 @@ color_selected = "red"
 color_unselected = "lightgray"
 
 rects = []
+temp_selected_seats = []
+prev_temp_selected_seats = []
 selected_seats = []
 initial_click_pos = None
 rectangle_select_active = False
@@ -40,7 +42,7 @@ def unselect_all_seats(event=None):
     global selected_seats
     global initial_click_pos
 
-    selected_seats = []
+    selected_seats.clear()
     initial_click_pos = None
     for rect in rects:
         cv.itemconfig(rect, outline=color_unselected)
@@ -67,6 +69,7 @@ cv = tk.Canvas(main_frame, width=800, height=600, background="gray")
 cv.grid(column=0, row=0)
 
 def click_and_drag_selected_seats(event):
+    global temp_selected_seats
     global selected_seats
     global initial_click_pos
     global rectangle_select_active
@@ -76,10 +79,19 @@ def click_and_drag_selected_seats(event):
         if selection_rectangle != None:
             cv.delete(selection_rectangle)
             selection_rectangle = None
+            print(f"click_and_drag: {len(temp_selected_seats)}")
+            for seat in temp_selected_seats:
+                cv.itemconfigure(seat, outline=color_unselected)
+            temp_selected_seats.clear()
+
+        x = cv.canvasx(event.x)
+        y = cv.canvasy(event.y)
+
         selection_rectangle = cv.create_rectangle(initial_click_pos[0], initial_click_pos[1], event.x, event.y, outline=color_selected)
-        selected_seats = list(set(selected_seats).union(set(cv.find_overlapping(initial_click_pos[0], initial_click_pos[1], event.x, event.y)[:-1])))
-        for selected_seat in selected_seats:
-            select_seat(selected_seat)
+        temp_selected_seats = list(set(temp_selected_seats).union(set(cv.find_overlapping(initial_click_pos[0], initial_click_pos[1], event.x, event.y)[:-1])))
+
+        for seat in temp_selected_seats:
+            cv.itemconfigure(seat, outline=color_selected)
 
     else:
         if initial_click_pos == None:
@@ -147,6 +159,7 @@ def canvas_click(event):
     unselect_all_seats()
     process_click(event)
 
+
 def motion(event):
 
     x = cv.canvasx(event.x)
@@ -161,10 +174,15 @@ def motion(event):
     else:
         app.configure(cursor='arrow')
 
+
 def release_m1(event):
     global rectangle_select_active
     if selection_rectangle != None:
         cv.delete(selection_rectangle)
+
+    for selected_seat in temp_selected_seats:
+        select_seat(selected_seat)
+    temp_selected_seats.clear()
 
     rectangle_select_active = False
 
