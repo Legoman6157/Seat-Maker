@@ -12,21 +12,25 @@ rectangle_select_active = False
 selection_rectangle = None
 rectangle_select_origin = None
 
+row_descriptors = ['A', 'B', 'C', 'D']
+
 def export_seats():
     global num_cols
     curr_col = 0
+    row = 0
 
-    o_f = open("seat_maker/seats.txt", "w")
+    o_f = open("seats.txt", "w")
     for rect in rects:
         coords = cv.coords(rect)
 
-        o_f.write(f"{coords[0]},{coords[1]}")
+        o_f.write(f"{row_descriptors[row]},{curr_col+1},{1},{0},{int(coords[0])},{int(coords[1])},500,500,0,{row+1}")
 
         curr_col = curr_col + 1
 
         if curr_col == num_cols:
             o_f.write("\n")
             curr_col = 0
+            row = row + 1
         else:
             o_f.write("\t")
     o_f.close()
@@ -79,7 +83,6 @@ def click_and_drag_selected_seats(event):
         if selection_rectangle != None:
             cv.delete(selection_rectangle)
             selection_rectangle = None
-            print(f"click_and_drag: {len(temp_selected_seats)}")
             for seat in temp_selected_seats:
                 cv.itemconfigure(seat, outline=color_unselected)
             temp_selected_seats.clear()
