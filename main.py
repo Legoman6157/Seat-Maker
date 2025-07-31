@@ -12,6 +12,12 @@ rectangle_select_active = False
 selection_rectangle = None
 rectangle_select_origin = None
 
+seat_w = 20
+seat_h = 20
+
+canvas_w = 800
+canvas_h = 600
+
 row_descriptors = ['A', 'B', 'C', 'D']
 
 def export_seats():
@@ -23,12 +29,17 @@ def export_seats():
     for rect in rects:
         coords = cv.coords(rect)
 
-        o_f.write(f"{row_descriptors[row]},{curr_col+1},{1},{0},{int(coords[0])},{int(coords[1])},500,500,0,{row+1}")
+        x = int((coords[0])*(10000/800))+1
+        y = int((coords[1])*(10000/600))+1
+        w = int(20*(10000/800))
+        h = int(20*(10000/600))
+        o_f.write(f"{row_descriptors[row]},{curr_col+1},1,0,0,{x},{y},{w},{h},0,{row+1}")
 
         curr_col = curr_col + 1
 
         if curr_col == num_cols:
-            o_f.write("\n")
+            if (row+1)*(curr_col) != len(rects):
+                o_f.write("\n")
             curr_col = 0
             row = row + 1
         else:
@@ -51,12 +62,25 @@ def unselect_all_seats(event=None):
     for rect in rects:
         cv.itemconfig(rect, outline=color_unselected)
 
+
+def resizeImage(img, newWidth, newHeight):
+    oldWidth = img.width()
+    oldHeight = img.height()
+    newPhotoImage = tk.PhotoImage(width=newWidth, height=newHeight)
+    for x in range(newWidth):
+        for y in range(newHeight):
+            xOld = int(x*oldWidth/newWidth)
+            yOld = int(y*oldHeight/newHeight)
+            rgb = '#%02x%02x%02x' % img.get(xOld, yOld)
+            newPhotoImage.put(rgb, (x, y))
+    return newPhotoImage
+
 app = tk.Tk()
 app.title("Seat Maker")
 app.geometry("1000x600")
 
-num_rows = 4
-num_cols = 5
+num_rows = 3
+num_cols = 3
 
 main_frame = tk.Frame(app)
 main_frame.pack()
@@ -69,7 +93,7 @@ l = 20
 x_offset = 0
 y_offset = 0
 
-cv = tk.Canvas(main_frame, width=800, height=600, background="gray")
+cv = tk.Canvas(grid_frame, width=canvas_w, height=canvas_h, background="gray")
 cv.grid(column=0, row=0)
 
 def click_and_drag_selected_seats(event):
@@ -189,6 +213,11 @@ def release_m1(event):
 
     rectangle_select_active = False
 
+def select_all(event):
+    global rects
+    for rect in rects:
+        select_seat(rect)
+
 
 cv.bind('<1>', canvas_click)
 cv.bind('<Shift-1>', unselect_seat)
@@ -196,15 +225,17 @@ cv.bind('<Control-1>', process_click)
 cv.bind('<B1-Motion>', click_and_drag_selected_seats)
 cv.bind('<Motion>', motion)
 cv.bind('<ButtonRelease-1>', release_m1)
+app.bind('<a>', select_all)
 
+# Create seats
 for i in range(num_rows):
     for j in range(num_cols):
-        temp_rect = cv.create_rectangle(x_offset, y_offset, x_offset+l, y_offset+l, fill="black", outline=color_unselected)
+        temp_rect = cv.create_rectangle(x_offset, y_offset, x_offset+seat_w, y_offset+seat_h, fill="black", outline=color_unselected)
         rects.append(temp_rect)
 
-        x_offset = x_offset + 40
+        x_offset = x_offset + seat_w
     x_offset = 0
-    y_offset = y_offset + 40
+    y_offset = y_offset + seat_h
 
 btn_frame = tk.Frame(grid_frame)
 btn_frame.grid(column=1, row=0)
